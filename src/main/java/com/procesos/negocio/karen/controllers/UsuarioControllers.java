@@ -4,6 +4,8 @@ import aj.org.objectweb.asm.Opcodes;
 import com.procesos.negocio.karen.models.Usuario;
 import com.procesos.negocio.karen.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -20,13 +22,18 @@ public class UsuarioControllers {
 
     /*public Usuario getUsuario(@PathVariable Long id){*/
 
-    public Optional<Usuario> getUsuario(@PathVariable Long id){
+   /* public Optional<Usuario> getUsuario(@PathVariable Long id){*/
+    public ResponseEntity getUsuario(@PathVariable Long id){
         //seleccionar usuarios
         Optional<Usuario> usuario = usuarioRepository.findById(id);
+        if (usuario.isPresent())
+        {
+            return new ResponseEntity(usuario, HttpStatus.OK);
+        }
 
-        /*
-        agregar usuarios
-        Usuario usuario= new Usuario();
+
+        //agregar usuarios
+        /*Usuario usuario= new Usuario();
         usuario.setId(id);
         usuario.setNombre("fabian");
         usuario.setApellidos("Rincón Chinchilla");
@@ -35,75 +42,113 @@ public class UsuarioControllers {
         usuario.setDireccion("kdx-o10-310");
         usuario.setTelefono("3144454761");*/
 
-        return usuario;
+        //return usuario;
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/usuario")
-    public Usuario crearUsuario(@RequestBody Usuario usuario)
+    /*public Usuario crearUsuario(@RequestBody Usuario usuario)*/
+    public ResponseEntity crearUsuario(@RequestBody Usuario usuario)
     {
-        usuarioRepository.save(usuario);
-        return usuario;
+        try {
+            usuarioRepository.save(usuario);
+            return new ResponseEntity(usuario,HttpStatus.CREATED);
+        }catch (Exception e)
+        {
+            return ResponseEntity.badRequest().build();
+        }
+        //return usuario;
     }
     //Mostrar todos los usuarios
+
     @GetMapping("/usuarios")
-    public List<Usuario> listarUsuarios()
+    //List<Usuario>
+    public  ResponseEntity listarUsuarios()
     {
-        return usuarioRepository.findAll();
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        if(usuarios.isEmpty())
+        {
+            return ResponseEntity.notFound().build();
+        }
+        return new ResponseEntity(usuarios,HttpStatus.OK);
+       // return usuarioRepository.findAll();
     }
+
+
     //Traer por nombre
 
     @GetMapping("/usuario/{nombre}/{apellidos}")
 
-    public List<Usuario> ListarPorNombreApellidos(@PathVariable String nombre, @PathVariable String apellidos)
+    public ResponseEntity ListarPorNombreApellidos(@PathVariable String nombre, @PathVariable String apellidos)
     {
-        return usuarioRepository.findAllByNombreAndApellidos(nombre,apellidos);
+        List<Usuario> usuarios = usuarioRepository.findAllByNombreAndApellidos(nombre,apellidos);
+        if (usuarios.isEmpty())
+        {
+            return ResponseEntity.notFound().build();
+        }
+        return new ResponseEntity(usuarios,HttpStatus.OK);
     }
 
     @GetMapping("/usuarios/nombre/{nombre}")
 
-    public List<Usuario> ListarPorNombre(@PathVariable String nombre)
+    public ResponseEntity ListarPorNombre(@PathVariable String nombre)
     {
-        return usuarioRepository.findAllByNombre(nombre);
+        List<Usuario> usuarios = usuarioRepository.findAllByNombre(nombre);
+        if (usuarios.isEmpty())
+        {
+            return ResponseEntity.notFound().build();
+        }
+        return new ResponseEntity(usuarios,HttpStatus.OK);
     }
 
     @GetMapping("/usuarios/apellidos/{apellidos}")
 
-    public List<Usuario> ListarPorApellidos(@PathVariable String apellidos)
+    public ResponseEntity ListarPorApellidos(@PathVariable String apellidos)
     {
-        return usuarioRepository.findAllByApellidos(apellidos);
+        List<Usuario> usuarios = usuarioRepository.findAllByApellidos(apellidos);
+        if (usuarios.isEmpty())
+        {
+            return ResponseEntity.notFound().build();
+        }
+        return new ResponseEntity(usuarios,HttpStatus.OK);
     }
     //Modificar
 
     @PutMapping("/usuario/{id}")
-    public Usuario editarUsuario(@PathVariable Long id, @RequestBody Usuario usuario)
+    public ResponseEntity editarUsuario(@PathVariable Long id, @RequestBody Usuario usuario)
     {
-        Usuario usuarioBD = usuarioRepository.findById(id).get();
-        try {
-            usuarioBD.setNombre(usuario.getNombre());
-            usuarioBD.setApellidos(usuario.getApellidos());
-            usuarioBD.setDireccion(usuario.getDireccion());
-            usuarioBD.setDocumento(usuario.getDocumento());
-            usuarioBD.setFechaNacimiento(usuario.getFechaNacimiento());
-            usuarioBD.setTelefono(usuario.getTelefono());
-            usuarioRepository.save(usuarioBD);
-
-            return usuarioBD;
-        }catch (Exception e){
-            return null;
+        Optional<Usuario> usuarioBD = usuarioRepository.findById(id);
+        if(usuarioBD.isPresent())
+        {
+            try {
+                usuarioBD.get().setNombre(usuario.getNombre());
+                usuarioBD.get().setApellidos(usuario.getApellidos());
+                usuarioBD.get().setDireccion(usuario.getDireccion());
+                usuarioBD.get().setDocumento(usuario.getDocumento());
+                usuarioBD.get().setFechaNacimiento(usuario.getFechaNacimiento());
+                usuarioBD.get().setTelefono(usuario.getTelefono());
+                usuarioRepository.save(usuarioBD.get());
+                return new ResponseEntity(usuarioBD,HttpStatus.OK);
+            }catch (Exception e)
+            {
+                return ResponseEntity.badRequest().build();
+            }
         }
-
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/usuario/{id}")
-    public Usuario eliminarUsuario(@PathVariable Long id)
+    public ResponseEntity eliminarUsuario(@PathVariable Long id)
     {
-        Usuario usuarioBD = usuarioRepository.findById(id).get();
-        try {
-            usuarioRepository.delete(usuarioBD);
-            return usuarioBD;
-        }catch (Exception e){
-            return null;
+        Optional<Usuario> usuarioBD = usuarioRepository.findById(id);
+        if(usuarioBD.isPresent())
+        {
+            usuarioRepository.delete(usuarioBD.get());
+            return ResponseEntity.noContent().build();
         }
+        return ResponseEntity.notFound().build();
+
+
 
     }
 }
